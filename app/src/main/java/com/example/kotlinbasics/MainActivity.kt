@@ -6,10 +6,12 @@ import android.os.Bundle
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.ScrollState
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
+import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
@@ -25,9 +27,15 @@ import androidx.compose.foundation.layout.offset
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.layout.wrapContentHeight
+import androidx.compose.foundation.layout.wrapContentWidth
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyListScope
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.grid.GridCells
 import androidx.compose.foundation.lazy.grid.LazyVerticalGrid
+import androidx.compose.foundation.lazy.rememberLazyListState
+import androidx.compose.foundation.pager.PagerState
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.CornerSize
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -42,6 +50,9 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.MutableState
+import androidx.compose.runtime.derivedStateOf
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.BiasAlignment
 import androidx.compose.ui.Modifier
@@ -49,11 +60,14 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.draw.shadow
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.Shape
 import androidx.compose.ui.graphics.drawscope.DrawStyle
+import androidx.compose.ui.graphics.graphicsLayer
 import androidx.compose.ui.layout.AlignmentLine
 import androidx.compose.ui.layout.VerticalAlignmentLine
 import androidx.compose.ui.layout.layout
 import androidx.compose.ui.platform.LocalConfiguration
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.PlatformTextStyle
 import androidx.compose.ui.text.TextStyle
@@ -64,6 +78,7 @@ import androidx.compose.ui.text.style.BaselineShift
 import androidx.compose.ui.text.style.TextDecoration
 import androidx.compose.ui.text.style.TextOverflow
 import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.Dp
 import androidx.compose.ui.unit.TextUnit
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.em
@@ -230,12 +245,18 @@ fun Greeting(model: GridModal, modifier: Modifier = Modifier) {
 
 @Composable
 fun MyGridView(dataList: List<GridModal>) {
-    LazyVerticalGrid(columns = GridCells.Fixed(count = 2)) {
-        items(count = dataList.size) { index ->
+    Column(modifier = Modifier.background(Color.Cyan).padding(top = 10.dp, bottom = 10.dp, start = 5.dp)) {
+        Text(text = "Sponsered")
+        LazyRow(){
+            items(count = dataList.size) { index ->
+                GreetingSponsered(model = dataList[index])
+            }
 
-            Greeting(model = dataList[index])
         }
+        DotsIndicator(totalDots = dataList.size, selectedColor = Color.Black, unSelectedColor = Color.Red, selectedIndex = 0)
     }
+
+
 }
 
 @Preview(showBackground = true, uiMode = Configuration.UI_MODE_NIGHT_YES)
@@ -243,4 +264,118 @@ fun MyGridView(dataList: List<GridModal>) {
 fun GreetingPreview() {
     MyGridView(dataList = products)
 
+}
+
+@Composable
+fun GreetingSponsered(model: GridModal, modifier: Modifier = Modifier) {
+    Row(
+        modifier = modifier
+            .background(color = Color.White)
+            .border(width = 2.dp, color = Color.Black, shape = RoundedCornerShape(10.dp))
+            .padding(top = 10.dp, start = 10.dp, bottom = 10.dp, end = 20.dp)
+    ) {
+        Box(
+            modifier
+                .width(width = 100.dp)
+                .height(
+                    height = 100.dp
+                )
+                .background(Color.DarkGray)
+        ) {
+            AsyncImage(
+                model = model.productImage,
+                contentDescription = "kuch",
+                modifier = modifier
+                    .fillMaxSize()
+                    .background(Color.Green)
+            )
+
+        }
+
+        Column(modifier.padding(start = 10.dp, end = 10.dp)) {
+            Text(
+                text = model.productTitle + "bht sara text hai yeh too kese add kru",
+                style = TextStyle(
+                    fontFamily = FontFamily.Serif,
+                    fontWeight = FontWeight.Bold,
+                    color = Color.Black,
+                ),
+                maxLines = 2,
+                overflow = TextOverflow.Ellipsis,
+                fontSize = 12.sp,
+            )
+                Text(
+                    text = "₹ 201",
+                    style = TextStyle(
+                        color = Color(color = 0xFF000000),
+                        fontSize = 16.sp,
+                    ),
+                    modifier = modifier.padding(top = 10.dp)
+
+                )
+            Row(  modifier = modifier.padding(top = 10.dp)){
+                Text(
+                    text = "₹ 201",
+                    style = TextStyle(
+                        color = Color(color = 0xFF988989),
+                        fontSize = 12.sp,
+                        baselineShift = BaselineShift.Subscript,
+                        textDecoration = TextDecoration.LineThrough
+                    ),
+                )
+                Text(
+                    text = "(10% Off)",
+                    style = TextStyle(
+                        color = Color.Green,
+                        fontSize = 12.sp,
+                        baselineShift = BaselineShift.Subscript,
+                    ),
+                    modifier = modifier.padding(start = 4.dp)
+                )
+            }
+
+
+        }
+    }
+
+}
+
+@Composable
+fun DotsIndicator(
+    totalDots : Int,
+    selectedIndex : Int,
+    selectedColor: Color,
+    unSelectedColor: Color,
+){
+
+    LazyRow(
+        modifier = Modifier
+            .fillMaxWidth()
+            .wrapContentHeight().padding(15.dp),
+        horizontalArrangement = Arrangement.Center
+
+    ) {
+
+        items(totalDots) { index ->
+            if (index == selectedIndex) {
+                Box(
+                    modifier = Modifier
+                        .size(5.dp)
+                        .clip(CircleShape)
+                        .background(selectedColor)
+                )
+            } else {
+                Box(
+                    modifier = Modifier
+                        .size(5.dp)
+                        .clip(CircleShape)
+                        .background(unSelectedColor)
+                )
+            }
+
+            if (index != totalDots - 1) {
+                Spacer(modifier = Modifier.padding(horizontal = 2.dp))
+            }
+        }
+    }
 }
